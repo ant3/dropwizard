@@ -3,7 +3,6 @@ package io.dropwizard.db;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.Optional;
 import com.google.common.primitives.Ints;
 import io.dropwizard.util.Duration;
 import io.dropwizard.validation.MinDuration;
@@ -17,6 +16,7 @@ import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -96,6 +96,14 @@ import java.util.concurrent.TimeUnit;
  *         </td>
  *     </tr>
  *     <tr>
+ *         <td>{@code rollbackOnReturn}</td>
+ *         <td>{@code false}</td>
+ *         <td>
+ *             Set to true if you want the connection pool to rollback any pending transaction when a
+ *             connection is returned.
+ *         </td>
+ *     </tr>
+ *     <tr>
  *         <td>{@code autoCommitByDefault}</td>
  *         <td>JDBC driver's default</td>
  *         <td>The default auto-commit state of the connections.</td>
@@ -135,7 +143,9 @@ import java.util.concurrent.TimeUnit;
  *         <td>{@code initialSize}</td>
  *         <td>10</td>
  *         <td>
- *             The initial size of the connection pool.
+ *             The initial size of the connection pool. May be zero, which will allow you to start
+ *             the connection pool without requiring the DB to be up. In the latter case the {@link #minSize}
+ *             must also be set to zero.
  *         </td>
  *     </tr>
  *     <tr>
@@ -309,6 +319,8 @@ public class DataSourceFactory implements PooledDataSourceFactory {
 
     private boolean commitOnReturn = false;
 
+    private boolean rollbackOnReturn = false;
+
     private Boolean autoCommitByDefault;
 
     private Boolean readOnlyByDefault;
@@ -330,10 +342,10 @@ public class DataSourceFactory implements PooledDataSourceFactory {
 
     private boolean useFairQueue = true;
 
-    @Min(1)
+    @Min(0)
     private int initialSize = 10;
 
-    @Min(1)
+    @Min(0)
     private int minSize = 10;
 
     @Min(1)
@@ -380,7 +392,7 @@ public class DataSourceFactory implements PooledDataSourceFactory {
     @MinDuration(1)
     private Duration validationInterval = Duration.seconds(30);
 
-    private Optional<String> validatorClassName = Optional.absent();
+    private Optional<String> validatorClassName = Optional.empty();
 
     private boolean removeAbandoned = false;
 
@@ -566,8 +578,18 @@ public class DataSourceFactory implements PooledDataSourceFactory {
     }
 
     @JsonProperty
+    public boolean getRollbackOnReturn() {
+        return rollbackOnReturn;
+    }
+
+    @JsonProperty
     public void setCommitOnReturn(boolean commitOnReturn) {
         this.commitOnReturn = commitOnReturn;
+    }
+
+    @JsonProperty
+    public void setRollbackOnReturn(boolean rollbackOnReturn) {
+        this.rollbackOnReturn = rollbackOnReturn;
     }
 
     @JsonProperty
@@ -662,7 +684,7 @@ public class DataSourceFactory implements PooledDataSourceFactory {
 
     @JsonProperty
     public Optional<Duration> getMaxConnectionAge() {
-        return Optional.fromNullable(maxConnectionAge);
+        return Optional.ofNullable(maxConnectionAge);
     }
 
     @JsonProperty
@@ -733,7 +755,7 @@ public class DataSourceFactory implements PooledDataSourceFactory {
     @Override
     @JsonProperty
     public Optional<Duration> getValidationQueryTimeout() {
-        return Optional.fromNullable(validationQueryTimeout);
+        return Optional.ofNullable(validationQueryTimeout);
     }
 
     @JsonProperty
@@ -796,6 +818,7 @@ public class DataSourceFactory implements PooledDataSourceFactory {
         poolConfig.setAbandonWhenPercentageFull(abandonWhenPercentageFull);
         poolConfig.setAlternateUsernameAllowed(alternateUsernamesAllowed);
         poolConfig.setCommitOnReturn(commitOnReturn);
+        poolConfig.setRollbackOnReturn(rollbackOnReturn);
         poolConfig.setDbProperties(properties);
         poolConfig.setDefaultAutoCommit(autoCommitByDefault);
         poolConfig.setDefaultCatalog(defaultCatalog);

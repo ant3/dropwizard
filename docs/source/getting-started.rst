@@ -70,7 +70,7 @@ Metrics for metrics
 The Metrics_ library rounds things out, providing you with unparalleled insight into your code's
 behavior in your production environment.
 
-.. _Metrics: http://metrics.codahale.com
+.. _Metrics: http://metrics.dropwizard.io/
 
 .. _gs-and-friends:
 
@@ -83,7 +83,7 @@ you ship more quickly and with fewer regrets.
 * Guava_, which, in addition to highly optimized immutable data structures, provides a growing
   number of classes to speed up development in Java.
 * Logback_ and slf4j_ for performant and flexible logging.
-* `Hibernate Validator`_, the `JSR-349`_ reference implementation, provides an easy, declarative
+* `Hibernate Validator`_, the `JSR 349`_ reference implementation, provides an easy, declarative
   framework for validating user input and generating helpful and i18n-friendly error messages.
 * The `Apache HttpClient`_ and Jersey_ client libraries allow for both low- and high-level
   interaction with other web services.
@@ -93,11 +93,11 @@ you ship more quickly and with fewer regrets.
 * Freemarker_ and Mustache_ are simple templating systems for more user-facing applications.
 * `Joda Time`_ is a very complete, sane library for handling dates and times.
 
-.. _Guava: http://code.google.com/p/guava-libraries/
+.. _Guava: https://github.com/google/guava
 .. _Logback: http://logback.qos.ch/
 .. _slf4j: http://www.slf4j.org/
 .. _Hibernate Validator: http://www.hibernate.org/subprojects/validator.html
-.. _JSR-349: http://jcp.org/en/jsr/detail?id=349
+.. _JSR 349: http://jcp.org/en/jsr/detail?id=349
 .. _Apache HttpClient: http://hc.apache.org/httpcomponents-client-ga/index.html
 .. _JDBI: http://www.jdbi.org
 .. _Liquibase: http://www.liquibase.org
@@ -123,9 +123,9 @@ we go through this example application. If you have any questions about how Mave
 .. _Buildr: http://buildr.apache.org/
 .. _Gradle: http://www.gradle.org/
 .. _SBT: https://github.com/harrah/xsbt/wiki
-.. _Gant: http://gant.codehaus.org/
+.. _Gant: https://github.com/Gant/Gant
 .. _Leiningen: https://github.com/technomancy/leiningen
-.. __: http://www.sonatype.com/books/mvnref-book/reference/
+.. __: https://books.sonatype.com/mvnref-book/reference/
 
 
 You have three alternatives from here:
@@ -408,7 +408,6 @@ instances from the URI ``/hello-world``, so our resource class looks like this:
     package com.example.helloworld.resources;
 
     import com.example.helloworld.api.Saying;
-    import com.google.common.base.Optional;
     import com.codahale.metrics.annotation.Timed;
 
     import javax.ws.rs.GET;
@@ -417,6 +416,7 @@ instances from the URI ``/hello-world``, so our resource class looks like this:
     import javax.ws.rs.QueryParam;
     import javax.ws.rs.core.MediaType;
     import java.util.concurrent.atomic.AtomicLong;
+    import java.util.Optional;
 
     @Path("/hello-world")
     @Produces(MediaType.APPLICATION_JSON)
@@ -434,7 +434,7 @@ instances from the URI ``/hello-world``, so our resource class looks like this:
         @GET
         @Timed
         public Saying sayHello(@QueryParam("name") Optional<String> name) {
-            final String value = String.format(template, name.or(defaultName));
+            final String value = String.format(template, name.orElse(defaultName));
             return new Saying(counter.incrementAndGet(), value);
         }
     }

@@ -326,7 +326,10 @@ The ``DropwizardClientRule`` takes care of:
 Integration Testing
 ===================
 
-It can be useful to start up your entire app and hit it with real HTTP requests during testing.
+It can be useful to start up your entire application and hit it with real HTTP requests during testing.
+The ``dropwizard-testing`` module offers helper classes for your easily doing so.
+The optional ``dropwizard-client`` module offers more helpers, e.g. a custom JerseyClientBuilder,
+which is aware of your application's environment.
 
 JUnit
 -----
@@ -365,16 +368,19 @@ By creating a DropwizardTestSupport instance in your test you can manually start
     public class LoginAcceptanceTest {
 
         public static final DropwizardTestSupport<TestConfiguration> SUPPORT =
-                new DropwizardTestSupport<TestConfiguration>(MyApp.class, ResourceHelpers.resourceFilePath("my-app-config.yaml"));
+                new DropwizardTestSupport<TestConfiguration>(MyApp.class,
+                    ResourceHelpers.resourceFilePath("my-app-config.yaml"),
+                    ConfigOverride.config("server.applicationConnectors[0].port", "0") // Optional, if not using a separate testing-specific configuration file, use a randomly selected port
+                );
 
         @BeforeClass
         public void beforeClass() {
-          SUPPORT.before();
+            SUPPORT.before();
         }
 
         @AfterClass
         public void afterClass() {
-          SUPPORT.after();
+            SUPPORT.after();
         }
 
         @Test
@@ -382,10 +388,68 @@ By creating a DropwizardTestSupport instance in your test you can manually start
             Client client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client");
 
             Response response = client.target(
-                     String.format("http://localhost:%d/login", RULE.getLocalPort()))
+                     String.format("http://localhost:%d/login", SUPPORT.getLocalPort()))
                     .request()
                     .post(Entity.json(loginForm()));
 
             assertThat(response.getStatus()).isEqualTo(302);
+        }
+    }
+
+.. _man-testing-commands:
+
+Testing Commands
+================
+
+:ref:`Commands <man-core-commands>` can and should be tested, as it's important to ensure arguments
+are interpreted correctly, and the output is as expected.
+
+Below is a test for a command that adds the arguments as numbers and outputs the summation to the
+console. The test ensures that the result printed to the screen is correct by capturing standard out
+before the command is ran.
+
+.. code-block:: java
+
+    public class CommandTest {
+        private final ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
+        private final ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
+        private Cli cli;
+
+        @Before
+        public void setUp() throws Exception {
+            // Setup necessary mock
+            final JarLocation location = mock(JarLocation.class);
+            when(location.getVersion()).thenReturn(Optional.of("1.0.0"));
+
+            // Add commands you want to test
+            final Bootstrap<MyConfiguration> bootstrap = new Bootstrap<>(new MyApplication());
+            bootstrap.addCommand(new MyAddCommand());
+
+            // Redirect stdout and stderr to our byte streams
+            System.setOut(new PrintStream(stdOut));
+            System.setErr(new PrintStream(stdErr));
+
+            // Build what'll run the command and interpret arguments
+            cli = new Cli(location, bootstrap, stdOut, stdErr);
+        }
+
+        @After
+        public void teardown() {
+            System.setOut(null);
+            System.setErr(null);
+            System.setIn(null);
+        }
+
+        @Test
+        public void myAddCanAddThreeNumbersCorrectly() {
+            final boolean success = cli.run("add", "2", "3", "6");
+
+            SoftAssertions softly = new SoftAssertions();
+            softly.assertThat(success).as("Exit success").isTrue();
+
+            // Assert that 2 + 3 + 6 outputs 11
+            softly.assertThat(stdOut.toString()).as("stdout").isEqualTo("11");
+            softly.assertThat(stdErr.toString()).as("stderr").isEmpty();
+            softly.assertAll();
         }
     }

@@ -64,7 +64,7 @@ Configuration
 =============
 
 Dropwizard provides a number of built-in configuration parameters. They are
-well documented in the `example project's configuration`__.
+well documented in the `example project's configuration`__ and :ref:`configuration refererence <man-configuration>`.
 
 .. __: https://github.com/dropwizard/dropwizard/blob/master/dropwizard-example/example.yml
 
@@ -262,9 +262,10 @@ SSL
 
 SSL support is built into Dropwizard. You will need to provide your own java
 keystore, which is outside the scope of this document (``keytool`` is the
-command you need). There is a test keystore you can use in the
-`Dropwizard example project`__.
+command you need, and `Jetty's documentation`_ can get you started). There is a
+test keystore you can use in the `Dropwizard example project`__.
 
+.. _`Jetty's documentation`: http://www.eclipse.org/jetty/documentation/current/configuring-ssl.html
 .. __: https://github.com/dropwizard/dropwizard/tree/master/dropwizard-example
 
 .. code-block:: yaml
@@ -379,7 +380,7 @@ is called.
 
 For example, given a theoretical Riak__ client which needs to be started and stopped:
 
-.. __: http://riak.basho.com
+.. __: http://basho.com/products/
 
 .. code-block:: java
 
@@ -430,8 +431,37 @@ behavior. For example, ``AssetBundle`` from the ``dropwizard-assets`` module pro
 to serve static assets from your application's ``src/main/resources/assets`` directory as files
 available from ``/assets/*`` (or any other path) in your application.
 
+Configured Bundles
+------------------
+
 Some bundles require configuration parameters. These bundles implement ``ConfiguredBundle`` and will
 require your application's ``Configuration`` subclass to implement a specific interface.
+
+
+For example: given the configured bundle ``MyConfiguredBundle`` and the interface ``MyConfiguredBundleConfig`` below.
+Your application's ``Configuration`` subclass would need to implement ``MyConfiguredBundleConfig``.
+
+.. code-block:: java
+
+    public class MyConfiguredBundle implements ConfiguredBundle<MyConfiguredBundleConfig>{
+
+        @Override
+        public void run(MyConfiguredBundleConfig applicationConfig, Environment environment) {
+            applicationConfig.getBundleSpecificConfig();
+        }
+
+        @Override
+        public void initialize(Bootstrap<?> bootstrap) {
+
+        }
+    }
+
+    public interface MyConfiguredBundleConfig{
+
+        String getBundleSpecificConfig();
+
+    }
+
 
 Serving Assets
 --------------
@@ -584,7 +614,7 @@ record runtime information about your tasks. Here's a basic task class:
             this.database = database;
         }
 
-          @Override
+        @Override
         public void execute(ImmutableMultimap<String, String> parameters, PrintWriter output) throws Exception {
             this.database.truncate();
         }
@@ -921,7 +951,7 @@ mapping various aspects of POJOs to outgoing HTTP responses. Here's a basic reso
 
         @POST
         public Response add(@PathParam("user") LongParam userId,
-                            @Valid Notification notification) {
+                            @NotNull @Valid Notification notification) {
             final long id = store.add(userId.get(), notification);
             return Response.created(UriBuilder.fromResource(NotificationResource.class)
                                               .build(userId.get(), id))
@@ -1028,7 +1058,7 @@ this:
 
     @POST
     public Response add(@PathParam("user") LongParam userId,
-                        @Valid Notification notification) {
+                        @NotNull @Valid Notification notification) {
         final long id = store.add(userId.get(), notification);
         return Response.created(UriBuilder.fromResource(NotificationResource.class)
                                           .build(userId.get(), id)
@@ -1045,7 +1075,9 @@ response to the client.
 
 .. note::
 
-    If your request entity parameter isn't annotated with ``@Valid``, it won't be validated.
+    If a request entity parameter is just annotated with ``@Valid``, it is still allowed to be
+    ``null``, so to ensure that the object is present and validated ``@NotNull @Valid`` is a
+    powerful combination.
 
 .. _man-core-resources-media-types:
 
@@ -1080,24 +1112,85 @@ In general, though, we recommend you return actual domain objects if at all poss
 Error Handling
 --------------
 
-If your resource class unintentionally throws an exception, Dropwizard will log that exception
-(including stack traces) and return a terse, safe ``text/plain`` ``500 Internal Server Error``
-response.
+Almost as important as an application's happy path (receiving expected input and returning expected
+output) is an application behavior when something goes wrong.
+
+If your resource class unintentionally throws an exception, Dropwizard will log that exception under
+the ``ERROR`` level (including stack traces) and return a terse, safe ``application/json`` ``500
+Internal Server Error`` response. The response will contain an ID that can be grepped out the server
+logs for additional information.
 
 If your resource class needs to return an error to the client (e.g., the requested record doesn't
 exist), you have two options: throw a subclass of ``Exception`` or restructure your method to
-return a ``Response``.
+return a ``Response``. If at all possible, prefer throwing ``Exception`` instances to returning
+``Response`` objects, as that will make resource endpoints more self describing and easier to test.
 
-If at all possible, prefer throwing ``Exception`` instances to returning
-``Response`` objects.
+The least instrusive way to map error conditions to a response is to throw a ``WebApplicationException``:
 
-If you throw a subclass of ``WebApplicationException`` jersey will map that to a defined response.
+.. code-block:: java
 
-If you want more control, you can also declare JerseyProviders in your Environment to map Exceptions
-to certain responses by calling ``JerseyEnvironment#register(Object)`` with an implementation of
-javax.ws.rs.ext.ExceptionMapper.
-e.g. Your resource throws an InvalidArgumentException, but the response would be 400, bad request.
+    @GET
+    @Path("/{collection}")
+    public Saying reduceCols(@PathParam("collection") String collection) {
+        if (!collectionMap.containsKey(collection)) {
+            final String msg = String.format("Collection %s does not exist", collection);
+            throw new WebApplicationException(msg, Status.NOT_FOUND)
+        }
 
+        // ...
+    }
+
+In this example a ``GET`` request to ``/foobar`` will return
+
+.. code-block:: json
+
+    {"code":404,"message":"Collection foobar does not exist"}
+
+One can also take exceptions that your resource may throw and map them to appropriate responses. For instance,
+an endpoint may throw ``IllegalArugmentException`` and it may be worthy enough of a response to warrant a
+custom metric to track how often the event occurs. Here's an example of such an ``ExceptionMapper``
+
+.. code-block:: java
+
+    public class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
+        private final Meter exceptions;
+        public IllegalArgumentExceptionMapper(MetricRegistry metrics) {
+            exceptions = metrics.meter(name(getClass(), "exceptions"));
+        }
+
+        @Override
+        public Response toResponse(IllegalArgumentException e) {
+            exceptions.mark();
+            return Response.status(Status.BAD_REQUEST)
+                    .header("X-YOU-SILLY", "true")
+                    .type(MediaType.APPLICATION_JSON_TYPE)
+                    .entity(new ErrorMessage(Status.BAD_REQUEST.getStatusCode(),
+                            "You passed an illegal argument!"))
+                    .build();
+        }
+    }
+
+and then registering the exception mapper:
+
+.. code-block:: java
+
+    @Override
+    public void run(final MyConfiguration conf, final Environment env) {
+        env.jersey().register(new IllegalArgumentExceptionMapper(env.metrics()));
+        env.jersey().register(new Resource());
+    }
+
+Overriding Default Exception Mappers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want more control, you can disable the exception mappers Dropwizard provides by default. This is done
+by setting ``server.registerDefaultExceptionMappers`` to ``false``. Since this disables all default exception
+mappers make sure to re-enable exception mappers that are wanted. The default exception mappers are:
+
+- ``LoggingExceptionMapper<Throwable>``
+- ``JerseyViolationExceptionMapper``
+- ``JsonProcessingExceptionMapper``
+- ``EarlyEofExceptionMapper``
 
 .. _man-core-resources-uris:
 

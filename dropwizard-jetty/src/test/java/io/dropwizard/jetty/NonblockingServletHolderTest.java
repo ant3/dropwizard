@@ -9,7 +9,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class NonblockingServletHolderTest {
     private final Servlet servlet = mock(Servlet.class);
@@ -39,7 +41,7 @@ public class NonblockingServletHolderTest {
 
         final InOrder inOrder = inOrder(baseRequest, servlet);
 
-        inOrder.verify(baseRequest).setAsyncSupported(false);
+        inOrder.verify(baseRequest).setAsyncSupported(false, null);
         inOrder.verify(servlet).service(request, response);
     }
 

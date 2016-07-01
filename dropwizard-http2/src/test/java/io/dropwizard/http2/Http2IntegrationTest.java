@@ -1,6 +1,5 @@
 package io.dropwizard.http2;
 
-import com.google.common.base.Optional;
 import com.google.common.net.HttpHeaders;
 import io.dropwizard.Configuration;
 import io.dropwizard.testing.ConfigOverride;
@@ -19,6 +18,7 @@ import org.junit.Test;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -74,9 +74,6 @@ public class Http2IntegrationTest extends AbstractHttp2Test {
 
     @Test
     public void testHttp2ManyRequests() throws Exception {
-        // For some reason the library requires to perform the first request synchronously with HTTP/2
-        testHttp2();
-
         performManyAsyncRequests(client, "https://localhost:" + appRule.getLocalPort() + "/api/test");
     }
 }

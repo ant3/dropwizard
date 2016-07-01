@@ -4,14 +4,14 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
-import io.dropwizard.configuration.ConfigurationFactory;
+import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.DiscoverableSubtypeResolver;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.errors.EarlyEofExceptionMapper;
 import io.dropwizard.jersey.errors.LoggingExceptionMapper;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
-import io.dropwizard.jersey.validation.Validators;
 import io.dropwizard.jersey.validation.JerseyViolationExceptionMapper;
+import io.dropwizard.jersey.validation.Validators;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.ServerPushFilterFactory;
 import io.dropwizard.logging.ConsoleAppenderFactory;
@@ -26,7 +26,6 @@ import org.eclipse.jetty.server.Server;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.validation.Validator;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -36,7 +35,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -45,21 +43,26 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class DefaultServerFactoryTest {
+    private Environment environment = new Environment("test", Jackson.newObjectMapper(),
+            Validators.newValidator(), new MetricRegistry(),
+            ClassLoader.getSystemClassLoader());
     private DefaultServerFactory http;
 
     @Before
     public void setUp() throws Exception {
+
         final ObjectMapper objectMapper = Jackson.newObjectMapper();
         objectMapper.getSubtypeResolver().registerSubtypes(ConsoleAppenderFactory.class,
                                                            FileAppenderFactory.class,
                                                            SyslogAppenderFactory.class,
                                                            HttpConnectorFactory.class);
 
-        this.http = new ConfigurationFactory<>(DefaultServerFactory.class,
-                                               BaseValidator.newValidator(),
-                                               objectMapper, "dw")
+        http = new YamlConfigurationFactory<>(DefaultServerFactory.class,
+                                              BaseValidator.newValidator(),
+                                              objectMapper, "dw")
                 .build(new File(Resources.getResource("yaml/server.yml").toURI()));
     }
 
@@ -108,9 +111,7 @@ public class DefaultServerFactoryTest {
     @Test
     public void registersDefaultExceptionMappers() throws Exception {
         assertThat(http.getRegisterDefaultExceptionMappers()).isTrue();
-        Environment environment = new Environment("test", Jackson.newObjectMapper(),
-                Validators.newValidator(), new MetricRegistry(),
-                ClassLoader.getSystemClassLoader());
+
         http.build(environment);
         Set<Object> singletons = environment.jersey().getResourceConfig().getSingletons();
         assertThat(singletons).hasAtLeastOneElementOfType(LoggingExceptionMapper.class);
@@ -135,12 +136,6 @@ public class DefaultServerFactoryTest {
 
     @Test
     public void testGracefulShutdown() throws Exception {
-        ObjectMapper objectMapper = Jackson.newObjectMapper();
-        Validator validator = Validators.newValidator();
-        MetricRegistry metricRegistry = new MetricRegistry();
-        Environment environment = new Environment("test", objectMapper, validator, metricRegistry,
-                ClassLoader.getSystemClassLoader());
-
         CountDownLatch requestReceived = new CountDownLatch(1);
         CountDownLatch shutdownInvoked = new CountDownLatch(1);
 
@@ -151,7 +146,7 @@ public class DefaultServerFactoryTest {
 
         ((AbstractNetworkConnector)server.getConnectors()[0]).setPort(0);
 
-        ScheduledFuture<Void> cleanup = executor.schedule((Callable<Void>) () -> {
+        ScheduledFuture<Void> cleanup = executor.schedule(() -> {
             if (!server.isStopped()) {
                 server.stop();
             }
@@ -171,9 +166,9 @@ public class DefaultServerFactoryTest {
             return CharStreams.toString(new InputStreamReader(connection.getInputStream()));
         });
 
-        requestReceived.await();
+        requestReceived.await(10, TimeUnit.SECONDS);
 
-        Future<Void> serverStopped = executor.submit((Callable<Void>) () -> {
+        Future<Void> serverStopped = executor.submit(() -> {
             server.stop();
             return null;
         });
@@ -200,6 +195,14 @@ public class DefaultServerFactoryTest {
         // cancel the cleanup future since everything succeeded
         cleanup.cancel(false);
         executor.shutdownNow();
+    }
+
+    @Test
+    public void testConfiguredEnvironment() {
+        http.configure(environment);
+
+        assertEquals(http.getAdminContextPath(), environment.getAdminContext().getContextPath());
+        assertEquals(http.getApplicationContextPath(), environment.getApplicationContext().getContextPath());
     }
 
     @Path("/test")

@@ -8,6 +8,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.net.URL;
 import java.util.List;
 
 @Path("/json/")
@@ -28,7 +29,36 @@ public class JsonResource {
 
     @POST
     @Path("/ok")
-    public List<String> ok(OkRepresentation rep) {
+    public List<Integer> ok(OkRepresentation rep) {
         return ImmutableList.of(rep.getMessage());
+    }
+
+    @POST
+    @Path("/brokenList")
+    public List<Integer> ok(List<BrokenRepresentation> rep) {
+        return ImmutableList.of(rep.size());
+    }
+
+    @POST
+    @Path("/url")
+    public void url(URL url) {
+    }
+
+    @POST
+    @Path("/urlList")
+    public void urlList(List<URL> url) {
+    }
+
+    @POST
+    @Path("/interface")
+    public void face(IInterface inter) {
+    }
+
+    @POST
+    @Path("/interfaceList")
+    public void face(List<IInterface> inter) {
+    }
+
+    private interface IInterface {
     }
 }

@@ -1,9 +1,9 @@
 package io.dropwizard.views;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Optional;
 
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 /**
  * A Dropwizard view class.
@@ -49,7 +49,7 @@ public abstract class View {
      */
     @JsonIgnore
     public Optional<Charset> getCharset() {
-        return Optional.fromNullable(charset);
+        return Optional.ofNullable(charset);
     }
 
     private String resolveName(String templateName) {

@@ -13,35 +13,51 @@ v1.0.0
 * ``dropwizard-java8`` bundle merged into mainline `#1365 <https://github.com/dropwizard/dropwizard/issues/1365>`_
 * HTTP/2 and server push support `#1349 <https://github.com/dropwizard/dropwizard/issues/1349>`_
 * ``dropwizard-spdy`` module is removed in favor of ``dropwizard-http2`` `#1330 <https://github.com/dropwizard/dropwizard/pull/1330>`_
-* Switching to ``logback-access`` for HTTP request logging `#1415 <https://github.com/dropwizard/dropwizard/pull/1415>`
+* Switching to ``logback-access`` for HTTP request logging `#1415 <https://github.com/dropwizard/dropwizard/pull/1415>`_
 * Support for validating return values in JAX-RS resources `#1251 <https://github.com/dropwizard/dropwizard/pull/1251>`_
 * Consistent handling null entities in JAX-RS resources `#1251 <https://github.com/dropwizard/dropwizard/pull/1251>`_
+* Support for validating bean members in JAX-RS resources `#1572 <https://github.com/dropwizard/dropwizard/pull/1572>`_
 * Returning an HTTP 500 error for entities that can't be serialized `#1347 <https://github.com/dropwizard/dropwizard/pull/1347>`_
+* Support serialisation of lazy loaded POJOs in Hibernate `#1466 <https://github.com/dropwizard/dropwizard/pull/1466>`_
 * Support fallback to the ``toString`` method during deserializing enum values from JSON  `#1340 <https://github.com/dropwizard/dropwizard/pull/1340>`_
 * Support for setting default headers in Apache HTTP client `#1354 <https://github.com/dropwizard/dropwizard/pull/1354>`_
 * Printing help once on invalid command line arguments `#1376 <https://github.com/dropwizard/dropwizard/pull/1376>`_
 * Support for case insensitive and all single letter ``SizeUnit`` suffixes `#1380 <https://github.com/dropwizard/dropwizard/pull/1380>`_
 * Added a development profile to the build `#1364 <https://github.com/dropwizard/dropwizard/issues/1364>`_
 * All the default exception mappers in ``ResourceTestRule`` are registered by default `#1387 <https://github.com/dropwizard/dropwizard/pull/1387>`_
+* Allow DB minSize and initialSize to be zero for lazy connections `#1517 <https://github.com/dropwizard/dropwizard/pull/1517>`_
 * Ability to provide own ``RequestLogFactory`` `#1290 <https://github.com/dropwizard/dropwizard/pull/1290>`_
 * Support for authentication by polymorphic principals `#1392 <https://github.com/dropwizard/dropwizard/pull/1392>`_
 * Support for configuring Jetty's ``inheritedChannel`` option `#1410 <https://github.com/dropwizard/dropwizard/pull/1410>`_
 * Support for using ``DropwizardAppRule`` at the suite level `#1411 <https://github.com/dropwizard/dropwizard/pull/1411>`_
 * Support for adding multiple ``MigrationBundles`` `#1430 <https://github.com/dropwizard/dropwizard/pull/1430>`_
+* Support for obtaining server context paths in the ``Application.run`` method `#1503 <https://github.com/dropwizard/dropwizard/pull/1503>`_
+* Support for unlimited log files for file appender `#1549 <https://github.com/dropwizard/dropwizard/pull/1549>`_
+* Support for log file names determined by logging policy `#1561 <https://github.com/dropwizard/dropwizard/pull/1561>`_
+* Default Graphite reporter port changed from 8080 to 2003 `#1538 <https://github.com/dropwizard/dropwizard/pull/1538>`_
+* Upgraded to Apache HTTP Client 4.5.2
 * Upgraded to argparse4j 0.7.0
 * Upgraded to Guava 19.0
-* Upgraded to Hibernate 5.0.7 `#1429 <https://github.com/dropwizard/dropwizard/pull/1429>`_
+* Upgraded to H2 1.4.192
+* Upgraded to Hibernate 5.1.0 `#1429 <https://github.com/dropwizard/dropwizard/pull/1429>`_
+* Upgraded to Hibernate Validator 5.2.4.Final
+* Upgraded to HSQLDB 2.3.4
 * Upgraded to Jadira Usertype Core 5.0.0.GA
-* Upgraded to Jackson 2.6.5
-* Upgraded to JDBI 2.71 `#1358 <https://github.com/dropwizard/dropwizard/pull/1358>`_
-* Upgraded to Jetty 9.3.7.v20160115 `#1330 <https://github.com/dropwizard/dropwizard/pull/1330>`_
-* Upgraded to Joda-Time 2.9.2
-* Upgraded to Liquibase 3.4.2
+* Upgraded to Jackson 2.7.4
+* Upgraded to JDBI 2.73 `#1358 <https://github.com/dropwizard/dropwizard/pull/1358>`_
+* Upgraded to Jersey 2.23.1
+* Upgraded to Jetty 9.3.9.v20160517 `#1330 <https://github.com/dropwizard/dropwizard/pull/1330>`_
+* Upgraded to JMH 1.12
+* Upgraded to Joda-Time 2.9.4
+* Upgraded to Liquibase 3.5.1
 * Upgraded to liquibase-slf4j 2.0.0
-* Upgraded to Mustache 0.9.1
-* Upgraded to SLF4J 1.7.14
-* Upgraded to tomcat-jdbc 8.0.30
-* Upgraded to AssertJ 3.3.0
+* Upgraded to Logback 1.1.7
+* Upgraded to Mustache 0.9.2
+* Upgraded to SLF4J 1.7.21
+* Upgraded to tomcat-jdbc 8.5.3
+* Upgraded to Objenesis 2.3
+* Upgraded to AssertJ 3.4.1
+* Upgraded to Mockito 2.0.54-beta
 
 .. _rel-0.9.2:
 

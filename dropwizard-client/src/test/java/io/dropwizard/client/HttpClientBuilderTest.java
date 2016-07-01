@@ -4,7 +4,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.httpclient.HttpClientMetricNameStrategies;
 import com.codahale.metrics.httpclient.InstrumentedHttpClientConnectionManager;
 import com.codahale.metrics.httpclient.InstrumentedHttpRequestExecutor;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.client.proxy.AuthConfiguration;
 import io.dropwizard.client.proxy.ProxyConfiguration;
@@ -64,9 +63,13 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 public class HttpClientBuilderTest {
@@ -199,7 +202,7 @@ public class HttpClientBuilderTest {
         final HttpContext context = mock(HttpContext.class);
         final HttpResponse response = mock(HttpResponse.class);
         final HeaderIterator iterator = new BasicListHeaderIterator(
-                ImmutableList.<Header>of(new BasicHeader(HttpHeaders.CONNECTION, "timeout=50")),
+                ImmutableList.of(new BasicHeader(HttpHeaders.CONNECTION, "timeout=50")),
                 HttpHeaders.CONNECTION
         );
         when(response.headerIterator(HTTP.CONN_KEEP_ALIVE)).thenReturn(iterator);

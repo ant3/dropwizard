@@ -5,8 +5,8 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.util.JarLocation;
 import net.sourceforge.argparse4j.ArgumentParsers;
 import net.sourceforge.argparse4j.impl.Arguments;
-import net.sourceforge.argparse4j.inf.ArgumentAction;
 import net.sourceforge.argparse4j.inf.Argument;
+import net.sourceforge.argparse4j.inf.ArgumentAction;
 import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
@@ -101,7 +101,7 @@ public class Cli {
     private ArgumentParser buildParser(JarLocation location) {
         final String usage = "java -jar " + location;
         final ArgumentParser p = ArgumentParsers.newArgumentParser(usage, false);
-        p.version(location.getVersion().or(
+        p.version(location.getVersion().orElse(
                 "No application version detected. Add a Implementation-Version " +
                         "entry to your JAR's manifest to enable this."));
         addHelp(p);

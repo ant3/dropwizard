@@ -1,11 +1,8 @@
 package io.dropwizard.hibernate;
 
-import org.hibernate.SessionFactory;
-
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module.Feature;
 import com.google.common.collect.ImmutableList;
-
 import io.dropwizard.Configuration;
 import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.db.DatabaseConfiguration;
@@ -13,6 +10,7 @@ import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
+import org.hibernate.SessionFactory;
 
 public abstract class HibernateBundle<T extends Configuration> implements ConfiguredBundle<T>, DatabaseConfiguration<T> {
     public static final String DEFAULT_NAME = "hibernate";
@@ -66,7 +64,7 @@ public abstract class HibernateBundle<T extends Configuration> implements Config
         environment.healthChecks().register(name(),
                                             new SessionFactoryHealthCheck(
                                                     environment.getHealthCheckExecutorService(),
-                                                    dbConfig.getValidationQueryTimeout().or(Duration.seconds(5)),
+                                                    dbConfig.getValidationQueryTimeout().orElse(Duration.seconds(5)),
                                                     sessionFactory,
                                                     dbConfig.getValidationQuery()));
     }
@@ -82,6 +80,14 @@ public abstract class HibernateBundle<T extends Configuration> implements Config
         return listener;
     }
     
+    public boolean isLazyLoadingEnabled() {
+        return lazyLoadingEnabled;
+    }
+
+    public void setLazyLoadingEnabled(boolean lazyLoadingEnabled) {
+        this.lazyLoadingEnabled = lazyLoadingEnabled;
+    }
+
     public boolean isLazyLoadingEnabled() {
         return lazyLoadingEnabled;
     }

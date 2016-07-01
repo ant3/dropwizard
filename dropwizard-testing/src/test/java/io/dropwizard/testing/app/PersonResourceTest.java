@@ -15,10 +15,13 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests {@link ResourceTestRule}.
@@ -109,6 +112,17 @@ public class PersonResourceTest {
             .request()
             .get().getStatus())
             .isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+    }
+
+    @Test
+    public void testValidationGroupsException() {
+        final Response resp = resources.client().target("/person/blah/validation-groups-exception")
+            .request()
+            .post(Entity.json("{}"));
+        assertThat(resp.getStatus()).isEqualTo(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        assertThat(resp.readEntity(String.class))
+            .isEqualTo("{\"code\":500,\"message\":\"Parameters must have the same" +
+                " validation groups in validationGroupsException\"}");
     }
 
     @Test

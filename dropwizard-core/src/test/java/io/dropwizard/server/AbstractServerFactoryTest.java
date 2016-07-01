@@ -4,6 +4,7 @@ import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyContainerHolder;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
+import io.dropwizard.jetty.MutableServletContextHandler;
 import io.dropwizard.setup.Environment;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.thread.ThreadPool;
@@ -11,7 +12,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests that the {@link JerseyEnvironment#getUrlPattern()} is set by the following priority order:
@@ -36,6 +39,7 @@ public class AbstractServerFactoryTest {
     @Before
     public void before() {
         when(environment.jersey()).thenReturn(jerseyEnvironment);
+        when(environment.getApplicationContext()).thenReturn(new MutableServletContextHandler());
     }
 
     @Test
@@ -82,6 +86,11 @@ public class AbstractServerFactoryTest {
                                   environment.getJerseyServletContainer(),
                                   environment.metrics());
             return server;
+        }
+
+        @Override
+        public void configure(Environment environment) {
+            // left blank intentionally
         }
     }
 }

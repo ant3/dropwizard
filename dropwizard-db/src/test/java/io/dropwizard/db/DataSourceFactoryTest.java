@@ -1,9 +1,8 @@
 package io.dropwizard.db;
 
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Optional;
-import io.dropwizard.configuration.ConfigurationFactory;
 import io.dropwizard.configuration.ResourceConfigurationSourceProvider;
+import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.util.Duration;
 import io.dropwizard.validation.BaseValidator;
@@ -15,6 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,6 +43,14 @@ public class DataSourceFactoryTest {
         dataSource = factory.build(metricRegistry, "test");
         dataSource.start();
         return dataSource;
+    }
+
+    @Test
+    public void testInitialSizeIsZero() throws Exception {
+        factory.setUrl("nonsense invalid url");
+        factory.setInitialSize(0);
+        ManagedDataSource dataSource = factory.build(metricRegistry, "test");
+        dataSource.start();
     }
 
     @Test
@@ -102,7 +110,7 @@ public class DataSourceFactoryTest {
 
     @Test
     public void createDefaultFactory() throws Exception {
-        final DataSourceFactory factory = new ConfigurationFactory<>(DataSourceFactory.class,
+        final DataSourceFactory factory = new YamlConfigurationFactory<>(DataSourceFactory.class,
             BaseValidator.newValidator(), Jackson.newObjectMapper(), "dw")
             .build(new ResourceConfigurationSourceProvider(), "yaml/minimal_db_pool.yml");
 
@@ -111,6 +119,6 @@ public class DataSourceFactoryTest {
         assertThat(factory.getPassword()).isEqualTo("iAMs00perSecrEET");
         assertThat(factory.getUrl()).isEqualTo("jdbc:postgresql://db.example.com/db-prod");
         assertThat(factory.getValidationQuery()).isEqualTo("/* Health Check */ SELECT 1");
-        assertThat(factory.getValidationQueryTimeout()).isEqualTo(Optional.absent());
+        assertThat(factory.getValidationQueryTimeout()).isEqualTo(Optional.empty());
     }
 }

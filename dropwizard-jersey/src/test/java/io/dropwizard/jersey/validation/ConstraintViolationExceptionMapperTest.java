@@ -13,7 +13,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.Application;
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -195,6 +199,31 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
         assertThat(response.readEntity(String.class))
                 .containsOnlyOnce("query param name may not be empty")
                 .containsOnlyOnce("name must be Coda");
+    }
+
+    @Test
+    public void getGroupSubBeanParamsIs400() throws Exception {
+        final Response response = target("/valid/sub-group-zoo")
+            .queryParam("address", "42 WALLABY WAY")
+            .queryParam("name", "Coda")
+            .request().get();
+        assertThat(response.getStatus()).isEqualTo(400);
+
+        assertThat(response.readEntity(String.class))
+            .containsOnlyOnce("[\"address must not be uppercase\"]");
+    }
+
+    @Test
+    public void postValidGroupsIs400() throws Exception {
+        final Response response = target("/valid/sub-valid-group-zoo")
+            .queryParam("address", "42 WALLABY WAY")
+            .queryParam("name", "Coda")
+            .request()
+            .post(Entity.json("{}"));
+        assertThat(response.getStatus()).isEqualTo(400);
+
+        assertThat(response.readEntity(String.class))
+            .containsOnlyOnce("[\"address must not be uppercase\"]");
     }
 
     @Test
@@ -503,5 +532,17 @@ public class ConstraintViolationExceptionMapperTest extends JerseyTest {
         assertThat(response.getStatus()).isEqualTo(422);
         assertThat(response.readEntity(String.class))
                 .containsOnlyOnce("examples may not be empty");
+    }
+
+    @Test
+    public void testInvalidFieldQueryParam() {
+        final Response response = target("/valid/bar")
+            .queryParam("sort", "foo")
+            .request()
+            .get();
+
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.readEntity(String.class))
+            .containsOnlyOnce("sortParam must match \\\"^(asc|desc)$\\\"");
     }
 }

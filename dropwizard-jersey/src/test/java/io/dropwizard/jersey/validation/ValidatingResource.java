@@ -1,13 +1,10 @@
 package io.dropwizard.jersey.validation;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-
-import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.PartialExample;
-import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Partial1;
-import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Partial2;
 import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Example;
 import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.ListExample;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Partial1;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.Partial2;
+import io.dropwizard.jersey.jackson.JacksonMessageBodyProviderTest.PartialExample;
 import io.dropwizard.jersey.params.IntParam;
 import io.dropwizard.jersey.params.NonEmptyStringParam;
 import io.dropwizard.validation.Validated;
@@ -18,8 +15,22 @@ import org.hibernate.validator.valuehandling.UnwrapValidatedValue;
 
 import javax.servlet.ServletContext;
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.*;
+import javax.validation.constraints.Pattern;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.CookieParam;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.MatrixParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Collection;
@@ -31,6 +42,11 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ValidatingResource {
+
+    @QueryParam("sort")
+    @Pattern(regexp = "^(asc|desc)$")
+    private String sortParam;
+
     @POST
     @Path("foo")
     @Valid
@@ -62,7 +78,7 @@ public class ValidatingResource {
     @GET
     @Path("barter")
     public String isnt(@QueryParam("name") @Length(min = 3) @UnwrapValidatedValue NonEmptyStringParam name) {
-        return name.get().orNull();
+        return name.get().orElse(null);
     }
 
     @POST
@@ -137,6 +153,20 @@ public class ValidatingResource {
     @Path("sub-zoo")
     public String subBlazer(@Valid @BeanParam SubBeanParameter params) {
         return params.getName() + " " + params.getAddress();
+    }
+
+    @GET
+    @Path("sub-group-zoo")
+    public String subGroupBlazer(@Valid @Validated(Partial1.class) @BeanParam SubBeanParameter params) {
+        return params.getName() + " " + params.getAddress();
+    }
+
+    @POST
+    @Path("sub-valid-group-zoo")
+    public String subValidGroupBlazer(
+        @Valid @Validated(Partial1.class) @BeanParam SubBeanParameter params,
+        @Valid @Validated(Partial1.class) ValidRepresentation entity) {
+        return params.getName() + " " + params.getAddress() + " " + entity.getName();
     }
 
     @GET
